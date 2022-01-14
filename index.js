@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
 });
 
 /////
+var callingList = [];
 
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
@@ -27,6 +28,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("callUser", ({ userToCall, signalData, from, name }) => {
+    callingList.push({ a: socket.id, b: userToCall });
     io.to(userToCall).emit("callUser", { signal: signalData, from, name });
   });
 
@@ -35,8 +37,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnectCall", (data) => {
-    // io.emit("leaveCall", data.signal);
-    socket.broadcast.emit("leaveCall");
+    // io.emit("leaveCall", data.signal);\
+
+    const calling = callingList.find(
+      (x) => x.a === socket.id || x.b === socket.id
+    );
+
+    callingList = callingList.filter(
+      (x) => x.a === socket.id || x.b === socket.id
+    );
+    console.log("callingList", callingList);
+    if (calling) {
+      //console.log("callingList", callingList);
+
+      io.to(calling.a).emit("leaveCall");
+      io.to(calling.b).emit("leaveCall");
+    }
   });
 });
 
