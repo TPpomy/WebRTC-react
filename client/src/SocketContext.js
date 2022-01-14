@@ -4,7 +4,8 @@ import Peer from "simple-peer";
 
 const SocketContext = createContext();
 
-const socket = io("https://webrtc-reactjs.herokuapp.com/");
+const socket = io("localhost:5000");
+//const socket = io("https://webrtc-reactjs.herokuapp.com/");
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
@@ -28,7 +29,7 @@ const ContextProvider = ({ children }) => {
       });
 
     socket.on("me", (id) => setMe(id));
-
+    socket.on("leaveCall", (id) => CallEnded());
     socket.on("callUser", ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
@@ -78,6 +79,12 @@ const ContextProvider = ({ children }) => {
   };
 
   const leaveCall = () => {
+    socket.emit("disconnectCall", {});
+
+    CallEnded();
+  };
+
+  const CallEnded = () => {
     setCallEnded(true);
 
     connectionRef.current.destroy();

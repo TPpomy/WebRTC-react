@@ -17,6 +17,8 @@ app.get("/", (req, res) => {
   res.send("Running is good");
 });
 
+/////
+
 io.on("connection", (socket) => {
   socket.emit("me", socket.id);
 
@@ -30,6 +32,11 @@ io.on("connection", (socket) => {
 
   socket.on("answerCall", (data) => {
     io.to(data.to).emit("callAccepted", data.signal);
+  });
+
+  socket.on("disconnectCall", (data) => {
+    // io.emit("leaveCall", data.signal);
+    socket.broadcast.emit("leaveCall");
   });
 });
 
