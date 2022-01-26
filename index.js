@@ -1,13 +1,20 @@
 const app = require("express")();
 const server = require("http").createServer(app);
 const cors = require("cors");
-
+const mysql = require("mysql");
 const io = require("socket.io")(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
   },
 });
+const dbsql = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "webrtc",
+});
+dbsql.connect();
 
 app.use(cors());
 
@@ -32,8 +39,11 @@ io.on("connection", (socket) => {
     io.to(userToCall).emit("callUser", { signal: signalData, from, name });
   });
 
-  socket.on("answerCall", (data) => {
-    io.to(data.to).emit("callAccepted", data.signal);
+  socket.on("answerCall", (data, name) => {
+    io.to(data.to).emit("callAccepted", data.signal, name);
+    let sql = "INSERT INTO interaction(`u_call`, `u_receiver`) VALUES (?,?)";
+    console.log(name);
+    dbsql.query(sql, [socket.id, data.to]);
   });
 
   socket.on("disconnectCall", (data) => {
@@ -47,11 +57,15 @@ io.on("connection", (socket) => {
       (x) => x.a === socket.id || x.b === socket.id
     );
     console.log("callingList", callingList);
-    if (calling) {
-      //console.log("callingList", callingList);
 
+    if (calling) {
       io.to(calling.a).emit("leaveCall");
       io.to(calling.b).emit("leaveCall");
+      //dbsql.query("DELETE FROM `interaction`");
+      dbsql.query(
+        "DELETE FROM `interaction` WHERE (`u_call` = ? OR `u_receiver` = ?) AND (`u_call` = ?  OR `u_receiver` = ?)",
+        [calling.a, calling.a, calling.b, calling.b]
+      );
     }
   });
 });

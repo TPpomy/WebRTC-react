@@ -30,6 +30,7 @@ const ContextProvider = ({ children }) => {
 
     socket.on("me", (id) => setMe(id));
     socket.on("leaveCall", (id) => CallEnded());
+
     socket.on("callUser", ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
@@ -41,7 +42,11 @@ const ContextProvider = ({ children }) => {
     const peer = new Peer({ initiator: false, trickle: false, stream });
 
     peer.on("signal", (data) => {
-      socket.emit("answerCall", { signal: data, to: call.from });
+      socket.emit("answerCall", {
+        signal: data,
+        to: call.from,
+        name,
+      });
     });
 
     peer.on("stream", (currentStream) => {
